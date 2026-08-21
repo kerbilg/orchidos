@@ -1,0 +1,43 @@
+version: '3'
+
+tasks:
+  copy:
+    desc: copy userpatches
+    cmds:
+      - rsync -av userpatches/ armbian-build/userpatches/
+    silent: true
+  build:
+    desc: build image
+    cmds:
+      - ./armbian-build/compile.sh build orchidos
+    silent: true
+  get-image:
+    desc: get image
+    cmds:
+      - cp armbian-build/output/images/*.img output/output.img
+    silent: true
+  resize-image:
+    desc: resize image
+    cmds:
+      - qemu-img resize -f raw output/output.img 32G
+    silent: false
+  boot:
+    desc: boot qemu vm
+    cmds:
+      - |
+        qemu-system-x86_64 \
+          -m 2048 \
+          -smp 2 \
+          -drive file=output/output.img \
+          -netdev user,id=net0,hostfwd=tcp::2222-:22 \
+          -device e1000,netdev=net0 \
+          -vga virtio \
+          -display gtk \
+          -s
+
+    silent: false
+  remove-image:
+    desc: remove image
+    cmds:
+      - rm -f output/output.img
+    silent: true
